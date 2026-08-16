@@ -35,3 +35,26 @@ Tu obtiens une URL publique type `https://relaicompta-api-xxxx.run.app`.
 ## Prochaine étape
 Construire `client/` en React, en reprenant fidèlement le design de `relaicompta-demo.html`
 (mêmes couleurs, mêmes composants), mais branché sur cette vraie API au lieu de données figées.
+
+## Client React — mise en route
+```bash
+cd client
+npm install
+npm run dev   # http://localhost:5173, proxy /api vers le serveur local (port 4000)
+```
+Le parcours complet est présent : accueil, espace client (documents + suivi côte à
+côte sur desktop), interface cabinet (dashboard avec barre latérale, 6 types de
+documents testables, rapprochement bancaire), questionnaire — **réellement envoyé
+à l'API** (`POST /api/questionnaire`) une fois Firebase configuré côté serveur.
+
+## Déployer le client (Firebase Hosting, cohérent avec le reste du projet)
+```bash
+cd client
+npm run build
+firebase init hosting   # pointer sur le dossier dist/
+firebase deploy --only hosting
+```
+Tu obtiens un lien public type `https://relaicompta.web.app` à envoyer directement
+aux cabinets — plus besoin de visite terrain pour recueillir leurs retours, même si
+les visites restent utiles pour échanger de vive voix.
+
