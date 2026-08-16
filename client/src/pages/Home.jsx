@@ -1,20 +1,17 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
+  const navigate = useNavigate();
   return (
-    <div className="screen">
+    <div className="page" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "calc(100vh - 60px)" }}>
       <div>
         <div className="eyebrow">Cabinet d'expertise comptable</div>
-        <h1 className="hero-title">Vos documents, lus et classés avant même d'arriver sur votre bureau.</h1>
+        <h1 className="hero">Vos documents, lus et classés avant même d'arriver sur votre bureau.</h1>
         <p className="section-sub" style={{ fontSize: 15, lineHeight: 1.55 }}>
-          Une démonstration de 3 minutes : d'abord le point de vue de votre client, puis ce qui se passe côté cabinet une fois le document envoyé.
+          Une démonstration : d'abord le point de vue de votre client, puis ce qui se passe côté cabinet une fois le document envoyé.
         </p>
       </div>
-      <div style={{ marginTop: 28 }}>
-        <div className="cta-group">
-          <Link to="/client"><button className="btn-primary" style={{ width: "100%" }}>Découvrir la démo</button></Link>
-        </div>
-      </div>
+      <button className="btn-primary" onClick={() => navigate("/client")}>Découvrir la démo</button>
     </div>
   );
 }

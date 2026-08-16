@@ -4,3 +4,4 @@ server/serviceAccountKey.json
 dist/
 build/
 .DS_Store
+client/dist/

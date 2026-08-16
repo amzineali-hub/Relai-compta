@@ -19,6 +19,14 @@ cp .env.example .env
 npm run dev
 ```
 
+```bash
+cd client
+npm install
+cp .env.example .env
+npm run dev
+```
+Le frontend tourne sur `http://localhost:5173`, l'API sur `http://localhost:4000`.
+
 ## Configurer Firebase (5 minutes)
 1. Va sur [console.firebase.google.com](https://console.firebase.google.com) → "Ajouter un projet" → nomme-le `relaicompta`
 2. Active **Firestore Database** (mode production, région `eur3` ou `europe-west` pour la latence Maroc)
@@ -32,9 +40,22 @@ gcloud run deploy relaicompta-api --source . --region europe-west1 --allow-unaut
 ```
 Tu obtiens une URL publique type `https://relaicompta-api-xxxx.run.app`.
 
-## Prochaine étape
-Construire `client/` en React, en reprenant fidèlement le design de `relaicompta-demo.html`
-(mêmes couleurs, mêmes composants), mais branché sur cette vraie API au lieu de données figées.
+## Déployer le frontend (Firebase Hosting ou Vercel)
+```bash
+cd client
+npm run build
+firebase deploy --only hosting   # ou : vercel --prod
+```
+Pense à définir `VITE_API_URL` sur l'URL réelle de ton API déployée avant de builder.
+
+## État actuel
+- Backend testé et fonctionnel (démarre, répond sur `/api/health`)
+- Frontend testé et fonctionnel (build de production passe sans erreur)
+- Vue client : dépôt de document réel + liste des documents envoyés, branchés sur l'API
+- Vue cabinet : liste des documents reçus (version simplifiée, pas encore le détail par type de document de la maquette)
+- Questionnaire : écrit réellement en base Firestore
+- Accès toujours par lien simple (pas de mot de passe) — Firebase Auth à ajouter en V1
+
 
 ## Client React — mise en route
 ```bash

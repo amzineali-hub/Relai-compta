@@ -1,0 +1,63 @@
+:root{
+  --ink:#0E1A26;
+  --bg:#F1F3EF;
+  --paper:#FFFFFF;
+  --zellige:#14594C;
+  --zellige-dim:#E6EEEC;
+  --ocre:#C08A3E;
+  --text:#0D0D0B;
+  --text-dim:#4A5750;
+  --line:#D8DED9;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Sans', sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.app-shell{
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  background:var(--paper);
+  box-shadow:0 0 40px rgba(27,42,61,0.08);
+}
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 24px; border-bottom:1px solid var(--line);
+}
+.mark{font-family:'Fraunces', serif; font-size:18px; font-weight:700; color:var(--ink);}
+.mark span{color:var(--zellige);}
+.eyebrow{
+  font-family:'IBM Plex Mono', monospace; font-size:11px;
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--text-dim);
+}
+.page{padding:28px 24px 24px;}
+h1.hero{font-family:'Fraunces', serif; font-size:28px; font-weight:700; color:var(--ink); margin:0 0 14px;}
+h2.section-title{font-family:'Fraunces', serif; font-size:20px; font-weight:700; color:var(--ink); margin:0 0 4px;}
+.section-sub{font-size:13px; color:var(--text-dim); margin:0 0 18px;}
+button{font-family:'IBM Plex Sans'; cursor:pointer; border:none; transition:transform .08s;}
+.btn-primary{
+  background:linear-gradient(180deg,#1C6E5E 0%,var(--zellige) 100%);
+  color:#fff; padding:15px 20px; border-radius:6px; font-size:15px; font-weight:700;
+  box-shadow:0 4px 0 #0B3B31; width:100%;
+}
+.btn-primary:active{transform:translateY(3px); box-shadow:0 1px 0 #0B3B31;}
+.btn-secondary{
+  background:#fff; color:var(--ink); padding:15px 20px; border-radius:6px;
+  font-size:15px; font-weight:700; border:1px solid var(--line); width:100%;
+}
+.extract-table{border-top:1px solid var(--line);}
+.extract-row{display:flex; justify-content:space-between; align-items:center; padding:11px 2px; border-bottom:1px solid var(--line); font-size:13px;}
+.extract-row .label{color:var(--text-dim);}
+.status-chip{padding:2px 8px; border-radius:3px; font-size:11px; color:#fff;}
+.status-recu{background:var(--zellige);}
+.status-attente{background:var(--ocre);}
+.export-note{background:#FBF5EA; border:1px solid var(--ocre); border-radius:3px; padding:10px 12px; font-size:12px; color:#7A5A22; margin:14px 0;}
+input[type=text]{width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:3px; font-family:'IBM Plex Sans'; font-size:14px; background:var(--bg);}
+.form-label{font-size:13px; font-weight:700; color:var(--ink); margin-bottom:8px; display:block;}
+.chip{padding:9px 14px; border:1px solid var(--line); border-radius:20px; font-size:13px; background:#fff; cursor:pointer;}
+.chip.checked{background:var(--zellige); border-color:var(--zellige); color:#fff;}
+.chip-group{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;}
