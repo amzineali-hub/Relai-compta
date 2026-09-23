@@ -2,12 +2,16 @@ import admin from "firebase-admin";
 import { readFileSync } from "fs";
 
 // Le fichier de clé de service Firebase n'est jamais commité (voir .gitignore).
-// Récupère-le depuis Firebase Console > Paramètres du projet > Comptes de service.
+// En local : Firebase Console > Paramètres du projet > Comptes de service > télécharger le JSON.
+// Sur Vercel (pas de disque persistant) : colle le contenu de ce même JSON tel quel dans la
+// variable d'environnement FIREBASE_SERVICE_ACCOUNT_JSON du projet.
 const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "./serviceAccountKey.json";
 
 let app;
 try {
-  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
+  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+    : JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
   app = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });

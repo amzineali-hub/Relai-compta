@@ -33,20 +33,24 @@ Le frontend tourne sur `http://localhost:5173`, l'API sur `http://localhost:4000
 3. Paramètres du projet → **Comptes de service** → "Générer une nouvelle clé privée" → télécharge le JSON
 4. Place ce fichier dans `server/serviceAccountKey.json` (déjà exclu du dépôt via `.gitignore`)
 
-## Déployer l'API (Cloud Run, comme pour Madrasati)
-```bash
-cd server
-gcloud run deploy relaicompta-api --source . --region europe-west1 --allow-unauthenticated
-```
-Tu obtiens une URL publique type `https://relaicompta-api-xxxx.run.app`.
+## Déployer l'API (Vercel)
+Le dossier `server/` est un projet Vercel à part entière (Root Directory = `server` dans les
+réglages du projet) — l'app Express est adaptée en fonction serverless via `server/api/index.js`
+et `server/vercel.json`. Variables d'environnement à définir sur ce projet Vercel :
+- `FIREBASE_SERVICE_ACCOUNT_JSON` : le contenu complet du JSON de la clé de service Firebase
+  (voir ci-dessus), collé tel quel — pas de fichier possible sur Vercel.
 
-## Déployer le frontend (Firebase Hosting ou Vercel)
+Tu obtiens une URL publique type `https://relai-compta-api-xxxx.vercel.app`.
+
+## Déployer le frontend (Vercel)
+Le dossier `client/` est lui aussi un projet Vercel à part (Root Directory = `client`).
 ```bash
 cd client
 npm run build
-firebase deploy --only hosting   # ou : vercel --prod
 ```
-Pense à définir `VITE_API_URL` sur l'URL réelle de ton API déployée avant de builder.
+Avant de déployer, définis `VITE_API_URL` (variable d'environnement du projet Vercel du
+frontend) sur l'URL de l'API déployée ci-dessus, suivie de `/api` — ex.
+`https://relai-compta-api-xxxx.vercel.app/api`.
 
 ## État actuel
 - Backend testé et fonctionnel (démarre, répond sur `/api/health`)
@@ -68,14 +72,6 @@ côte sur desktop), interface cabinet (dashboard avec barre latérale, 6 types d
 documents testables, rapprochement bancaire), questionnaire — **réellement envoyé
 à l'API** (`POST /api/questionnaire`) une fois Firebase configuré côté serveur.
 
-## Déployer le client (Firebase Hosting, cohérent avec le reste du projet)
-```bash
-cd client
-npm run build
-firebase init hosting   # pointer sur le dossier dist/
-firebase deploy --only hosting
-```
-Tu obtiens un lien public type `https://relaicompta.web.app` à envoyer directement
-aux cabinets — plus besoin de visite terrain pour recueillir leurs retours, même si
-les visites restent utiles pour échanger de vive voix.
+Le déploiement du client se fait sur Vercel — voir la section "Déployer le frontend (Vercel)"
+plus haut.
 

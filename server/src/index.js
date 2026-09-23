@@ -16,5 +16,12 @@ app.use("/api/cabinets", cabinetsRouter);
 app.use("/api/documents", documentsRouter);
 app.use("/api/questionnaire", questionnaireRouter);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`RelaiCompta API en écoute sur le port ${PORT}`));
+export default app;
+
+// Sur Vercel, cette fonction n'est jamais exécutée telle quelle : la plateforme importe `app`
+// (voir api/index.js) et gère elle-même l'écoute réseau — un app.listen() ici entrerait en
+// conflit avec le runtime serverless. La variable VERCEL est posée automatiquement en prod.
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => console.log(`RelaiCompta API en écoute sur le port ${PORT}`));
+}
