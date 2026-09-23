@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 export default function Home() {
   const navigate = useNavigate();
   return (
-    <div className="page" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: "calc(100vh - 60px)" }}>
+    <div className="page home-page">
       <div>
         <div className="eyebrow">Cabinet d'expertise comptable</div>
         <h1 className="hero">Vos documents, lus et classés avant même d'arriver sur votre bureau.</h1>
