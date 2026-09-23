@@ -22,5 +22,13 @@ try {
   );
 }
 
-export const db = app ? admin.firestore() : null;
+let db = null;
+if (app) {
+  db = admin.firestore();
+  // Le SDK Admin utilise gRPC par défaut, qui reste bloqué en silence (ni erreur, ni réponse,
+  // juste un hang indéfini) dans les runtimes serverless comme celui de Vercel — pas de
+  // connexions longues persistantes possibles là-bas. Le basculer sur REST évite ce blocage.
+  db.settings({ preferRest: true });
+}
+export { db };
 export default admin;
