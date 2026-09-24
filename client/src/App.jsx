@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import ClientView from "./pages/ClientView";
 import CabinetView from "./pages/CabinetView";
@@ -13,7 +13,7 @@ export default function App() {
     <BrowserRouter>
       <div className="app-shell">
         <div className="topbar">
-          <div className="mark">Relai<span>Compta</span></div>
+          <Link to="/" className="mark" style={{ textDecoration: "none" }}>Relai<span>Compta</span></Link>
           <div className="eyebrow">MVP</div>
         </div>
         <Routes>

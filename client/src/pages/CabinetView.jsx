@@ -98,6 +98,7 @@ export default function CabinetView() {
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
   const [tested, setTested] = useState(new Set());
+  const [showExportInfo, setShowExportInfo] = useState(false);
 
   useEffect(() => {
     api.getDocuments(cabinetId, clientId)
@@ -107,7 +108,13 @@ export default function CabinetView() {
 
   function showDoc(key) {
     setSelectedKey(key);
+    setShowExportInfo(false);
     setTested((prev) => new Set(prev).add(key));
+  }
+
+  function goDocuments() {
+    setSelectedKey(null);
+    setShowExportInfo(false);
   }
 
   const current = selectedKey ? DOCS[selectedKey] : null;
@@ -118,9 +125,9 @@ export default function CabinetView() {
     <div className="page-dashboard">
       <div className="dash-sidebar">
         <div className="dash-brand">Relai<span>Compta</span></div>
-        <button className="nav-item on" onClick={() => setSelectedKey(null)}>📥 Documents</button>
+        <button className={`nav-item ${!current && !showExportInfo ? "on" : ""}`} onClick={goDocuments}>📥 Documents</button>
         <button className="nav-item" onClick={() => showDoc("releve_bancaire")}>🏦 Rapprochement</button>
-        <button className="nav-item">📤 Export</button>
+        <button className={`nav-item ${showExportInfo ? "on" : ""}`} onClick={() => { setSelectedKey(null); setShowExportInfo(true); }}>📤 Export</button>
         <Link className="nav-item" to="/questionnaire">📋 Questionnaire</Link>
         <Link className="nav-item" to="/client" style={{ marginTop: "auto" }}>← Espace client</Link>
       </div>
@@ -140,7 +147,20 @@ export default function CabinetView() {
           <div className="step">04 · Export</div>
         </div>
 
-        {!current && (
+        {showExportInfo && !current && (
+          <>
+            <h2 className="section-title">Export comptable</h2>
+            <p className="section-sub">Envoi des écritures classées vers votre logiciel de comptabilité</p>
+            <div className="extract-table" style={{ marginBottom: 20 }}>
+              <div className="extract-row"><span className="label">Logiciel connecté</span><span className="value tag">Sage 100</span></div>
+              <div className="extract-row"><span className="label">Dernier export</span><span className="value">Aucun pour l'instant</span></div>
+              <div className="extract-row"><span className="label">Documents prêts à exporter</span><span className="value">{docs.length}</span></div>
+            </div>
+            <div className="export-note">↳ Fonctionnalité de démonstration — l'export automatique arrivera dans une prochaine version</div>
+          </>
+        )}
+
+        {!showExportInfo && !current && (
           <>
             <h2 className="section-title" style={{ fontSize: 16 }}>Documents reçus</h2>
             {errorMsg && (

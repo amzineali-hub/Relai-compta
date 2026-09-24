@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 // Contenu illustratif (chiffres fictifs) — reprend la maquette relaicompta-demo.html à l'identique.
 // Aucune logique comptable réelle derrière : pas de calcul, pas de lecture de document.
 export default function EtatComptable() {
   const navigate = useNavigate();
+  const [notice, setNotice] = useState(false);
 
   return (
     <div className="page">
@@ -20,9 +22,10 @@ export default function EtatComptable() {
       </div>
       <div className="export-note">↳ Chiffres indicatifs, sous réserve de validation finale par votre expert-comptable</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button className="btn-primary">Télécharger le PDF</button>
-        <button className="btn-secondary">Poser une question au cabinet</button>
+        <button className="btn-primary" onClick={() => setNotice(true)}>Télécharger le PDF</button>
+        <button className="btn-secondary" onClick={() => setNotice(true)}>Poser une question au cabinet</button>
       </div>
+      {notice && <div className="export-note" style={{ marginTop: 14 }}>↳ Fonctionnalité de démonstration — disponible dans une prochaine version.</div>}
     </div>
   );
 }
