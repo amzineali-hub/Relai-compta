@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "../firebase.js";
+import { asyncHandler } from "../lib/asyncHandler.js";
 
 const router = Router();
 
@@ -12,7 +13,7 @@ function slugify(name) {
 }
 
 // Crée un cabinet et son lien d'accès unique (V0 : pas de mot de passe, accès par lien)
-router.post("/", async (req, res) => {
+router.post("/", asyncHandler(async (req, res) => {
   if (!db) return res.status(503).json({ error: "Base de données non configurée" });
   const { name, city, softwareUsed = [], sizeRange } = req.body;
   if (!name) return res.status(400).json({ error: "Le nom du cabinet est requis" });
@@ -29,15 +30,15 @@ router.post("/", async (req, res) => {
     cabinetLink: `/c/${slug}`,
     clientLink: `/c/${slug}/client`,
   });
-});
+}));
 
 // Récupère un cabinet par son slug (lien d'accès)
-router.get("/:slug", async (req, res) => {
+router.get("/:slug", asyncHandler(async (req, res) => {
   if (!db) return res.status(503).json({ error: "Base de données non configurée" });
   const snap = await db.collection("cabinets").where("slug", "==", req.params.slug).limit(1).get();
   if (snap.empty) return res.status(404).json({ error: "Cabinet introuvable" });
   const doc = snap.docs[0];
   res.json({ id: doc.id, ...doc.data() });
-});
+}));
 
 export default router;

@@ -23,12 +23,21 @@ try {
 }
 
 let db = null;
+let bucket = null;
 if (app) {
   db = admin.firestore();
   // Le SDK Admin utilise gRPC par défaut, qui reste bloqué en silence (ni erreur, ni réponse,
   // juste un hang indéfini) dans les runtimes serverless comme celui de Vercel — pas de
   // connexions longues persistantes possibles là-bas. Le basculer sur REST évite ce blocage.
   db.settings({ preferRest: true });
+
+  // Nom exact du bucket Storage (ex. relai-compa.firebasestorage.app) — visible dans Firebase
+  // Console une fois Storage activé. Pas de valeur par défaut devinée : les nouveaux projets
+  // Firebase utilisent depuis fin 2024 un nom de bucket différent de l'ancien <project-id>.appspot.com,
+  // mieux vaut une variable explicite qu'une supposition qui échoue silencieusement.
+  if (process.env.FIREBASE_STORAGE_BUCKET) {
+    bucket = admin.storage().bucket(process.env.FIREBASE_STORAGE_BUCKET);
+  }
 }
-export { db };
+export { db, bucket };
 export default admin;

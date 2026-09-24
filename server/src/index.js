@@ -16,6 +16,14 @@ app.use("/api/cabinets", cabinetsRouter);
 app.use("/api/documents", documentsRouter);
 app.use("/api/questionnaire", questionnaireRouter);
 
+// Filet de sécurité : toute erreur passée à next() (voir asyncHandler.js) atterrit ici en JSON
+// au lieu de la page d'erreur HTML par défaut d'Express, que le client ne sait pas parser.
+app.use((err, req, res, next) => {
+  console.error("Erreur non gérée:", err);
+  const status = err.status || (err.name === "MulterError" ? 400 : 500);
+  res.status(status).json({ error: err.message || "Erreur serveur" });
+});
+
 export default app;
 
 // Sur Vercel, cette fonction n'est jamais exécutée telle quelle : la plateforme importe `app`
