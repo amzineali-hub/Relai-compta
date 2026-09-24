@@ -188,6 +188,27 @@ export default function CabinetView() {
     }
   }
 
+  // Export réel (CSV des documents reçus par ce client) — contrairement au reste de la section
+  // "Export", qui reste indicative faute de vraie intégration Sage/Odoo, celui-ci s'appuie sur
+  // de vraies données Firestore déjà chargées, sans appel serveur supplémentaire.
+  function exportDocsCsv() {
+    const header = ["Nom du fichier", "Type", "Statut", "Date d'envoi"];
+    const rows = docs.map((d) => [
+      d.fileName, d.docType.replace(/_/g, " "), STATUS_LABEL[d.status] || d.status,
+      d.uploadedAt ? new Date(d.uploadedAt).toLocaleString("fr-FR") : "",
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";"))
+      .join("\r\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `documents_${(selectedClient?.name || selectedClientId).replace(/[^a-z0-9]+/gi, "_")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function changeClient() {
     setSelectedClientId(null);
     setSelectedKey(null);
@@ -352,13 +373,15 @@ export default function CabinetView() {
             {view === "export" && !current && (
               <>
                 <h2 className="section-title">Export comptable</h2>
-                <p className="section-sub">Envoi des écritures classées vers votre logiciel de comptabilité</p>
+                <p className="section-sub">Liste des documents reçus pour ce client, prête à exporter</p>
                 <div className="extract-table" style={{ marginBottom: 20 }}>
                   <div className="extract-row"><span className="label">Logiciel connecté</span><span className="value tag">Sage 100</span></div>
-                  <div className="extract-row"><span className="label">Dernier export</span><span className="value">Aucun pour l'instant</span></div>
                   <div className="extract-row"><span className="label">Documents prêts à exporter</span><span className="value">{docs.length}</span></div>
                 </div>
-                <div className="export-note">↳ Fonctionnalité de démonstration — l'export automatique arrivera dans une prochaine version</div>
+                <button className="btn-primary" onClick={exportDocsCsv} disabled={docs.length === 0}>
+                  📥 Télécharger le CSV
+                </button>
+                <div className="export-note">↳ Export CSV réel (noms, types, statuts, dates). L'envoi direct vers Sage/Odoo demande une vraie intégration avec ces logiciels, pas encore construite.</div>
               </>
             )}
 
@@ -377,10 +400,13 @@ export default function CabinetView() {
                   {docs.map((d) => (
                     <div className="extract-row" key={d.id}>
                       <span className="label">
-                        {d.downloadUrl
-                          ? <a href={d.downloadUrl} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>{d.fileName}</a>
-                          : d.fileName}
+                        {d.fileName}
                         {" "}<span style={{ color: "var(--text-dim)" }}>({d.docType.replace(/_/g, " ")})</span>
+                        {d.downloadUrl && (
+                          <a href={d.downloadUrl} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: "var(--zellige-vivid-dark)", fontWeight: 700, textDecoration: "none" }}>
+                            👁 Voir
+                          </a>
+                        )}
                       </span>
                       <span
                         className={`status-chip ${STATUS_CLASS[d.status] || "status-attente"}`}
