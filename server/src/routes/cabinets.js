@@ -40,7 +40,9 @@ router.get("/:slug", asyncHandler(async (req, res) => {
   res.json({ id: doc.id, ...doc.data() });
 }));
 
-// Liste les clients d'un cabinet — réservé au cabinet connecté : avant l'authentification,
+// Liste les clients d'un cabinet, avec leur nombre de documents reçus (comme les outils de
+// gestion de cabinet classiques — Dext, Pennylane... — qui montrent l'activité en un coup d'œil
+// plutôt qu'une simple liste de noms). Réservé au cabinet connecté : avant l'authentification,
 // n'importe qui connaissant le cabinetId (public, utilisé dans toutes les URLs) pouvait voir
 // la liste complète de ses clients.
 router.get("/:cabinetId/clients", requireAuth, asyncHandler(async (req, res) => {
@@ -48,7 +50,17 @@ router.get("/:cabinetId/clients", requireAuth, asyncHandler(async (req, res) => 
   const snap = await db
     .collection("cabinets").doc(req.params.cabinetId)
     .collection("clients").orderBy("createdAt", "desc").get();
-  res.json(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+  const clients = await Promise.all(snap.docs.map(async (d) => {
+    const docsCollection = db
+      .collection("cabinets").doc(req.params.cabinetId)
+      .collection("clients").doc(d.id)
+      .collection("documents");
+    const countSnap = await docsCollection.count().get();
+    return { id: d.id, ...d.data(), documentCount: countSnap.data().count };
+  }));
+
+  res.json(clients);
 }));
 
 // Enregistre un nouveau client pour ce cabinet — son lien d'envoi de documents est
@@ -66,17 +78,43 @@ router.post("/:cabinetId/clients", requireAuth, asyncHandler(async (req, res) =>
 }));
 
 // Enregistre une question envoyée par un client depuis son espace de suivi (ex. depuis la page
-// État comptable) — pas de fil de discussion pour l'instant, juste un dépôt côté cabinet.
+// État comptable). `from` est libre (le client tape son nom) : ces pages ne sont pas encore
+// reliées à un clientId précis, donc pas d'identification automatique possible pour l'instant.
 router.post("/:cabinetId/messages", asyncHandler(async (req, res) => {
   if (!db) return res.status(503).json({ error: "Base de données non configurée" });
-  const { text } = req.body;
+  const { text, from } = req.body;
   if (!text || !text.trim()) return res.status(400).json({ error: "Le message est vide" });
 
   const ref = await db
     .collection("cabinets").doc(req.params.cabinetId)
-    .collection("messages").add({ text: text.trim(), createdAt: new Date().toISOString() });
+    .collection("messages").add({
+      text: text.trim(),
+      from: (from || "").trim() || null,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
 
   res.status(201).json({ id: ref.id });
+}));
+
+// Liste les questions reçues — jusqu'ici enregistrées mais jamais consultables nulle part côté
+// cabinet, un vrai cul-de-sac pour un client qui pose une question. Réservé au cabinet connecté.
+router.get("/:cabinetId/messages", requireAuth, asyncHandler(async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Base de données non configurée" });
+  const snap = await db
+    .collection("cabinets").doc(req.params.cabinetId)
+    .collection("messages").orderBy("createdAt", "desc").get();
+  res.json(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+}));
+
+// Marque une question comme lue. Réservé au cabinet connecté.
+router.patch("/:cabinetId/messages/:messageId", requireAuth, asyncHandler(async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Base de données non configurée" });
+  await db
+    .collection("cabinets").doc(req.params.cabinetId)
+    .collection("messages").doc(req.params.messageId)
+    .update({ read: true });
+  res.json({ ok: true });
 }));
 
 export default router;

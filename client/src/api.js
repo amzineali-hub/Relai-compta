@@ -30,10 +30,18 @@ export const api = {
   getClients: async (cabinetId) => request(`/cabinets/${cabinetId}/clients`, { headers: await authHeader() }),
   createClient: async (cabinetId, data) =>
     request(`/cabinets/${cabinetId}/clients`, { method: "POST", body: JSON.stringify(data), headers: await authHeader() }),
-  sendMessage: (cabinetId, text) => request(`/cabinets/${cabinetId}/messages`, { method: "POST", body: JSON.stringify({ text }) }),
+  sendMessage: (cabinetId, text, from) =>
+    request(`/cabinets/${cabinetId}/messages`, { method: "POST", body: JSON.stringify({ text, from }) }),
+  getMessages: async (cabinetId) => request(`/cabinets/${cabinetId}/messages`, { headers: await authHeader() }),
+  markMessageRead: async (cabinetId, messageId) =>
+    request(`/cabinets/${cabinetId}/messages/${messageId}`, { method: "PATCH", body: "{}", headers: await authHeader() }),
   getDocuments: (cabinetId, clientId) => request(`/documents/${cabinetId}/${clientId}`),
   addDocument: (cabinetId, clientId, formData) =>
     request(`/documents/${cabinetId}/${clientId}`, { method: "POST", body: formData }),
+  updateDocumentStatus: async (cabinetId, clientId, documentId, status) =>
+    request(`/documents/${cabinetId}/${clientId}/${documentId}`, {
+      method: "PATCH", body: JSON.stringify({ status }), headers: await authHeader(),
+    }),
   submitQuestionnaire: (data) => request("/questionnaire", { method: "POST", body: JSON.stringify(data) }),
   getQuestionnaireResponses: () => request("/questionnaire"),
 };

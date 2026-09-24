@@ -8,6 +8,7 @@ import { api } from "../api";
 export default function EtatComptable() {
   const navigate = useNavigate();
   const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [fromName, setFromName] = useState("");
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -19,7 +20,7 @@ export default function EtatComptable() {
     setSending(true);
     setErrorMsg("");
     try {
-      await api.sendMessage("demo-cabinet", question.trim());
+      await api.sendMessage("demo-cabinet", question.trim(), fromName.trim());
       setSent(true);
       setQuestion("");
       setShowQuestionForm(false);
@@ -52,6 +53,14 @@ export default function EtatComptable() {
 
       {showQuestionForm && (
         <form onSubmit={handleSendQuestion} className="no-print" style={{ marginTop: 14 }}>
+          <label className="form-label">Votre nom</label>
+          <input
+            type="text"
+            placeholder="Pour que le cabinet sache qui demande"
+            value={fromName}
+            onChange={(e) => setFromName(e.target.value)}
+            style={{ marginBottom: 10 }}
+          />
           <label className="form-label">Votre question</label>
           <input
             type="text"

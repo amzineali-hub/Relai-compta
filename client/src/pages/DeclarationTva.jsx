@@ -5,11 +5,11 @@ import { useState } from "react";
 // Aucune logique fiscale réelle derrière : pas de calcul, pas de dépôt sur simpl-TVA.
 export default function DeclarationTva() {
   const navigate = useNavigate();
-  const [notice, setNotice] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   return (
     <div className="page">
-      <button className="back-link" onClick={() => navigate("/client")}>← Retour à mon suivi</button>
+      <button className="back-link no-print" onClick={() => navigate("/client")}>← Retour à mon suivi</button>
       <div className="eyebrow" style={{ marginBottom: 6 }}>Cabinet Alaoui &amp; Associés</div>
       <h2 className="section-title">Déclaration TVA — juillet 2026</h2>
       <p className="section-sub">Régime mensuel — échéance le 20 du mois suivant</p>
@@ -21,11 +21,24 @@ export default function DeclarationTva() {
         <div className="extract-row"><span className="label">Statut</span><span className="status-chip status-attente">En attente de dépôt</span></div>
       </div>
       <div className="export-note">↳ Déclaration préparée par le cabinet, en attente de dépôt sur simpl-IR/simpl-TVA</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button className="btn-primary" onClick={() => setNotice(true)}>Télécharger le justificatif</button>
-        <button className="btn-secondary" onClick={() => setNotice(true)}>Voir le détail des lignes</button>
+
+      <div className="no-print" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <button className="btn-primary" onClick={() => window.print()}>Télécharger le justificatif</button>
+        <button className="btn-secondary" onClick={() => setShowDetail((v) => !v)}>
+          {showDetail ? "Masquer le détail des lignes" : "Voir le détail des lignes"}
+        </button>
       </div>
-      {notice && <div className="export-note" style={{ marginTop: 14 }}>↳ Fonctionnalité de démonstration — disponible dans une prochaine version.</div>}
+
+      {showDetail && (
+        <div style={{ marginTop: 14 }}>
+          <h2 className="section-title" style={{ fontSize: 14 }}>Détail par taux (exemple)</h2>
+          <div className="extract-table">
+            <div className="extract-row"><span className="label">Ventes soumises 20%</span><span className="value">86 400,00 MAD</span></div>
+            <div className="extract-row"><span className="label">Achats déductibles 20%</span><span className="value">52 100,00 MAD</span></div>
+          </div>
+          <div className="export-note">↳ Répartition indicative par taux — le détail ligne à ligne réel dépendra des documents classés</div>
+        </div>
+      )}
     </div>
   );
 }

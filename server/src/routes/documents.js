@@ -2,6 +2,9 @@ import { Router } from "express";
 import multer from "multer";
 import { db, bucket } from "../firebase.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireAuth } from "../lib/requireAuth.js";
+
+const VALID_STATUSES = ["reçu", "en_lecture", "classé"];
 
 const router = Router();
 
@@ -79,6 +82,24 @@ router.post("/:cabinetId/:clientId", upload.single("file"), asyncHandler(async (
     });
 
   res.status(201).json({ id: ref.id });
+}));
+
+// Fait avancer manuellement le statut d'un document (reçu → en_lecture → classé) — il n'y a pas
+// encore de vraie lecture automatique derrière, mais le cabinet doit pouvoir trier ce qu'il a
+// déjà traité, comme dans un vrai outil de gestion de cabinet. Réservé au cabinet connecté.
+router.patch("/:cabinetId/:clientId/:documentId", requireAuth, asyncHandler(async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Base de données non configurée" });
+  const { status } = req.body;
+  if (!VALID_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Statut invalide (attendu : ${VALID_STATUSES.join(", ")})` });
+  }
+  const { cabinetId, clientId, documentId } = req.params;
+  await db
+    .collection("cabinets").doc(cabinetId)
+    .collection("clients").doc(clientId)
+    .collection("documents").doc(documentId)
+    .update({ status });
+  res.json({ ok: true });
 }));
 
 export default router;

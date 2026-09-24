@@ -93,10 +93,18 @@ const DOCS = {
   },
 };
 
+const STATUS_ORDER = ["reçu", "en_lecture", "classé"];
+const STATUS_LABEL = { "reçu": "Reçu", "en_lecture": "En lecture", "classé": "Classé" };
+const STATUS_CLASS = { "reçu": "status-attente", "en_lecture": "status-attente", "classé": "status-recu" };
+
 export default function CabinetView() {
   const { cabinetId = "demo-cabinet", clientId: urlClientId } = useParams();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  // 'documents' | 'export' | 'messages' — la section affichée dans le panneau principal.
+  const [view, setView] = useState("documents");
+
   const [clients, setClients] = useState([]);
   const [clientsLoaded, setClientsLoaded] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState(urlClientId || null);
@@ -108,7 +116,10 @@ export default function CabinetView() {
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
   const [tested, setTested] = useState(new Set());
-  const [showExportInfo, setShowExportInfo] = useState(false);
+
+  const [messages, setMessages] = useState([]);
+  const [messagesLoaded, setMessagesLoaded] = useState(false);
+  const [messagesErrorMsg, setMessagesErrorMsg] = useState("");
 
   async function loadClients() {
     try {
@@ -121,7 +132,18 @@ export default function CabinetView() {
     }
   }
 
-  useEffect(() => { loadClients(); }, [cabinetId]);
+  async function loadMessages() {
+    try {
+      const list = await api.getMessages(cabinetId);
+      setMessages(list);
+      setMessagesLoaded(true);
+    } catch (err) {
+      setMessagesErrorMsg(err.message);
+      setMessagesLoaded(true);
+    }
+  }
+
+  useEffect(() => { loadClients(); loadMessages(); }, [cabinetId]);
 
   useEffect(() => {
     if (!selectedClientId) { setDocs([]); return; }
@@ -147,22 +169,34 @@ export default function CabinetView() {
     }
   }
 
+  async function markRead(messageId) {
+    try {
+      await api.markMessageRead(cabinetId, messageId);
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, read: true } : m)));
+    } catch (err) {
+      setMessagesErrorMsg(err.message);
+    }
+  }
+
+  async function cycleStatus(doc) {
+    const next = STATUS_ORDER[(STATUS_ORDER.indexOf(doc.status) + 1) % STATUS_ORDER.length];
+    try {
+      await api.updateDocumentStatus(cabinetId, selectedClientId, doc.id, next);
+      setDocs((prev) => prev.map((d) => (d.id === doc.id ? { ...d, status: next } : d)));
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  }
+
   function changeClient() {
     setSelectedClientId(null);
     setSelectedKey(null);
-    setShowExportInfo(false);
     setTested(new Set());
   }
 
   function showDoc(key) {
     setSelectedKey(key);
-    setShowExportInfo(false);
     setTested((prev) => new Set(prev).add(key));
-  }
-
-  function goDocuments() {
-    setSelectedKey(null);
-    setShowExportInfo(false);
   }
 
   const current = selectedKey ? DOCS[selectedKey] : null;
@@ -170,14 +204,42 @@ export default function CabinetView() {
   const allDone = Object.keys(DOCS).every((k) => tested.has(k));
   const selectedClient = clients.find((c) => c.id === selectedClientId);
   const clientLink = selectedClientId ? `${window.location.origin}/c/${cabinetId}/${selectedClientId}` : "";
+  const unreadCount = messages.filter((m) => !m.read).length;
 
   return (
     <div className="page-dashboard">
       <div className="dash-sidebar">
         <div className="dash-brand">Relai<span>Compta</span></div>
-        <button className={`nav-item ${!current && !showExportInfo ? "on" : ""}`} onClick={goDocuments}>📥 Documents</button>
-        <button className="nav-item" onClick={() => selectedClientId && showDoc("releve_bancaire")}>🏦 Rapprochement</button>
-        <button className={`nav-item ${showExportInfo ? "on" : ""}`} onClick={() => { setSelectedKey(null); setShowExportInfo(true); }}>📤 Export</button>
+        <button
+          className={`nav-item ${view === "documents" ? "on" : ""}`}
+          onClick={() => { setView("documents"); setSelectedKey(null); }}
+        >
+          📥 Documents
+        </button>
+        <button
+          className="nav-item"
+          onClick={() => { setView("documents"); if (selectedClientId) showDoc("releve_bancaire"); }}
+        >
+          🏦 Rapprochement
+        </button>
+        <button
+          className={`nav-item ${view === "export" ? "on" : ""}`}
+          onClick={() => { setView("export"); setSelectedKey(null); }}
+        >
+          📤 Export
+        </button>
+        <button
+          className={`nav-item ${view === "messages" ? "on" : ""}`}
+          onClick={() => { setView("messages"); setSelectedKey(null); }}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <span>💬 Messages</span>
+          {unreadCount > 0 && (
+            <span style={{ background: "var(--red-vivid)", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 10, fontWeight: 700 }}>
+              {unreadCount}
+            </span>
+          )}
+        </button>
         <Link className="nav-item" to="/questionnaire">📋 Questionnaire</Link>
         <div style={{ marginTop: "auto" }}>
           {user && (
@@ -196,7 +258,41 @@ export default function CabinetView() {
           <div className="kpi-card blue"><div className="kpi-num">Sage 100</div><div className="kpi-label">CONNECTÉ AU LOGICIEL</div></div>
         </div>
 
-        {!selectedClientId && (
+        {view === "messages" && (
+          <>
+            <h2 className="section-title">Messages reçus</h2>
+            <p className="section-sub">Questions envoyées par vos clients depuis leur espace de suivi (page État comptable).</p>
+            {messagesErrorMsg && (
+              <div className="export-note">
+                ↳ {messagesErrorMsg.includes("non configurée") ? "Base de données pas encore connectée côté serveur." : messagesErrorMsg}
+              </div>
+            )}
+            <div className="extract-table">
+              {messagesLoaded && messages.length === 0 && !messagesErrorMsg && (
+                <div className="extract-row"><span className="label">Aucun message pour l'instant</span></div>
+              )}
+              {messages.map((m) => (
+                <div
+                  className="extract-row"
+                  key={m.id}
+                  style={{ alignItems: "flex-start", cursor: m.read ? "default" : "pointer" }}
+                  onClick={() => !m.read && markRead(m.id)}
+                >
+                  <span className="label">
+                    <span style={{ color: "var(--ink)", fontWeight: m.read ? 400 : 700 }}>{m.from || "Client anonyme"}</span>
+                    <span style={{ display: "block", marginTop: 2 }}>{m.text}</span>
+                    <span style={{ display: "block", fontSize: 10, color: "var(--text-dim)", marginTop: 2 }}>
+                      {m.createdAt ? new Date(m.createdAt).toLocaleString("fr-FR") : ""}
+                    </span>
+                  </span>
+                  {!m.read && <span className="status-chip status-attente">Nouveau</span>}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {view !== "messages" && !selectedClientId && (
           <>
             <h2 className="section-title">Vos clients</h2>
             <p className="section-sub">Choisissez un client pour voir ses documents, ou ajoutez-en un nouveau.</p>
@@ -211,7 +307,12 @@ export default function CabinetView() {
               )}
               {clients.map((c) => (
                 <div className="extract-row" key={c.id} style={{ cursor: "pointer" }} onClick={() => setSelectedClientId(c.id)}>
-                  <span className="label">{c.name}</span>
+                  <span className="label">
+                    {c.name}
+                    <span style={{ display: "block", fontSize: 10, color: "var(--text-dim)", marginTop: 2 }}>
+                      {c.documentCount || 0} document{(c.documentCount || 0) > 1 ? "s" : ""} reçu{(c.documentCount || 0) > 1 ? "s" : ""}
+                    </span>
+                  </span>
                   <span className="value tag">Ouvrir →</span>
                 </div>
               ))}
@@ -232,7 +333,7 @@ export default function CabinetView() {
           </>
         )}
 
-        {selectedClientId && (
+        {view !== "messages" && selectedClientId && (
           <>
             <button className="back-link" onClick={changeClient}>← Changer de client</button>
             <div className="eyebrow" style={{ marginBottom: 6 }}>Client</div>
@@ -248,7 +349,7 @@ export default function CabinetView() {
               <div className="step">04 · Export</div>
             </div>
 
-            {showExportInfo && !current && (
+            {view === "export" && !current && (
               <>
                 <h2 className="section-title">Export comptable</h2>
                 <p className="section-sub">Envoi des écritures classées vers votre logiciel de comptabilité</p>
@@ -261,7 +362,7 @@ export default function CabinetView() {
               </>
             )}
 
-            {!showExportInfo && !current && (
+            {view === "documents" && !current && (
               <>
                 <h2 className="section-title" style={{ fontSize: 16 }}>Documents reçus</h2>
                 {errorMsg && (
@@ -281,7 +382,14 @@ export default function CabinetView() {
                           : d.fileName}
                         {" "}<span style={{ color: "var(--text-dim)" }}>({d.docType.replace(/_/g, " ")})</span>
                       </span>
-                      <span className="status-chip status-attente">{d.status}</span>
+                      <span
+                        className={`status-chip ${STATUS_CLASS[d.status] || "status-attente"}`}
+                        style={{ cursor: "pointer" }}
+                        title="Cliquer pour faire avancer le statut"
+                        onClick={() => cycleStatus(d)}
+                      >
+                        {STATUS_LABEL[d.status] || d.status}
+                      </span>
                     </div>
                   ))}
                 </div>
