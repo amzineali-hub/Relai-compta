@@ -41,4 +41,28 @@ router.get("/:slug", asyncHandler(async (req, res) => {
   res.json({ id: doc.id, ...doc.data() });
 }));
 
+// Liste les clients d'un cabinet (documents groupés par client côté cabinet — sans ça, tous les
+// clients se retrouvaient mélangés dans une seule case "demo-client" fixe).
+router.get("/:cabinetId/clients", asyncHandler(async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Base de données non configurée" });
+  const snap = await db
+    .collection("cabinets").doc(req.params.cabinetId)
+    .collection("clients").orderBy("createdAt", "desc").get();
+  res.json(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+}));
+
+// Enregistre un nouveau client pour ce cabinet — son lien d'envoi de documents est
+// /c/{cabinetId}/{clientId}, à transmettre directement au client.
+router.post("/:cabinetId/clients", asyncHandler(async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Base de données non configurée" });
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Le nom du client est requis" });
+
+  const ref = await db
+    .collection("cabinets").doc(req.params.cabinetId)
+    .collection("clients").add({ name, createdAt: new Date().toISOString() });
+
+  res.status(201).json({ id: ref.id, name });
+}));
+
 export default router;

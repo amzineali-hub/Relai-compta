@@ -18,6 +18,8 @@ async function request(path, options = {}) {
 export const api = {
   getCabinet: (slug) => request(`/cabinets/${slug}`),
   createCabinet: (data) => request("/cabinets", { method: "POST", body: JSON.stringify(data) }),
+  getClients: (cabinetId) => request(`/cabinets/${cabinetId}/clients`),
+  createClient: (cabinetId, data) => request(`/cabinets/${cabinetId}/clients`, { method: "POST", body: JSON.stringify(data) }),
   getDocuments: (cabinetId, clientId) => request(`/documents/${cabinetId}/${clientId}`),
   addDocument: (cabinetId, clientId, formData) =>
     request(`/documents/${cabinetId}/${clientId}`, { method: "POST", body: formData }),

@@ -92,19 +92,64 @@ const DOCS = {
 };
 
 export default function CabinetView() {
-  const { cabinetId = "demo-cabinet", clientId = "demo-client" } = useParams();
+  const { cabinetId = "demo-cabinet", clientId: urlClientId } = useParams();
   const navigate = useNavigate();
+  const [clients, setClients] = useState([]);
+  const [clientsLoaded, setClientsLoaded] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState(urlClientId || null);
+  const [newClientName, setNewClientName] = useState("");
+  const [creatingClient, setCreatingClient] = useState(false);
+  const [clientErrorMsg, setClientErrorMsg] = useState("");
+
   const [docs, setDocs] = useState([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [selectedKey, setSelectedKey] = useState(null);
   const [tested, setTested] = useState(new Set());
   const [showExportInfo, setShowExportInfo] = useState(false);
 
+  async function loadClients() {
+    try {
+      const list = await api.getClients(cabinetId);
+      setClients(list);
+      setClientsLoaded(true);
+    } catch (err) {
+      setClientErrorMsg(err.message);
+      setClientsLoaded(true);
+    }
+  }
+
+  useEffect(() => { loadClients(); }, [cabinetId]);
+
   useEffect(() => {
-    api.getDocuments(cabinetId, clientId)
+    if (!selectedClientId) { setDocs([]); return; }
+    api.getDocuments(cabinetId, selectedClientId)
       .then(setDocs)
       .catch((err) => setErrorMsg(err.message));
-  }, [cabinetId, clientId]);
+  }, [cabinetId, selectedClientId]);
+
+  async function handleCreateClient(e) {
+    e.preventDefault();
+    if (!newClientName.trim() || creatingClient) return;
+    setCreatingClient(true);
+    setClientErrorMsg("");
+    try {
+      const created = await api.createClient(cabinetId, { name: newClientName.trim() });
+      setNewClientName("");
+      await loadClients();
+      setSelectedClientId(created.id);
+    } catch (err) {
+      setClientErrorMsg(err.message);
+    } finally {
+      setCreatingClient(false);
+    }
+  }
+
+  function changeClient() {
+    setSelectedClientId(null);
+    setSelectedKey(null);
+    setShowExportInfo(false);
+    setTested(new Set());
+  }
 
   function showDoc(key) {
     setSelectedKey(key);
@@ -120,13 +165,15 @@ export default function CabinetView() {
   const current = selectedKey ? DOCS[selectedKey] : null;
   const anyTested = tested.size > 0;
   const allDone = Object.keys(DOCS).every((k) => tested.has(k));
+  const selectedClient = clients.find((c) => c.id === selectedClientId);
+  const clientLink = selectedClientId ? `${window.location.origin}/c/${cabinetId}/${selectedClientId}` : "";
 
   return (
     <div className="page-dashboard">
       <div className="dash-sidebar">
         <div className="dash-brand">Relai<span>Compta</span></div>
         <button className={`nav-item ${!current && !showExportInfo ? "on" : ""}`} onClick={goDocuments}>📥 Documents</button>
-        <button className="nav-item" onClick={() => showDoc("releve_bancaire")}>🏦 Rapprochement</button>
+        <button className="nav-item" onClick={() => selectedClientId && showDoc("releve_bancaire")}>🏦 Rapprochement</button>
         <button className={`nav-item ${showExportInfo ? "on" : ""}`} onClick={() => { setSelectedKey(null); setShowExportInfo(true); }}>📤 Export</button>
         <Link className="nav-item" to="/questionnaire">📋 Questionnaire</Link>
         <Link className="nav-item" to="/client" style={{ marginTop: "auto" }}>← Espace client</Link>
@@ -140,114 +187,161 @@ export default function CabinetView() {
           <div className="kpi-card blue"><div className="kpi-num">Sage 100</div><div className="kpi-label">CONNECTÉ AU LOGICIEL</div></div>
         </div>
 
-        <div className="steps">
-          <div className="step on">01 · Dépôt</div>
-          <div className="step on">02 · Lecture</div>
-          <div className="step on">03 · Classement</div>
-          <div className="step">04 · Export</div>
-        </div>
-
-        {showExportInfo && !current && (
+        {!selectedClientId && (
           <>
-            <h2 className="section-title">Export comptable</h2>
-            <p className="section-sub">Envoi des écritures classées vers votre logiciel de comptabilité</p>
-            <div className="extract-table" style={{ marginBottom: 20 }}>
-              <div className="extract-row"><span className="label">Logiciel connecté</span><span className="value tag">Sage 100</span></div>
-              <div className="extract-row"><span className="label">Dernier export</span><span className="value">Aucun pour l'instant</span></div>
-              <div className="extract-row"><span className="label">Documents prêts à exporter</span><span className="value">{docs.length}</span></div>
-            </div>
-            <div className="export-note">↳ Fonctionnalité de démonstration — l'export automatique arrivera dans une prochaine version</div>
-          </>
-        )}
-
-        {!showExportInfo && !current && (
-          <>
-            <h2 className="section-title" style={{ fontSize: 16 }}>Documents reçus</h2>
-            {errorMsg && (
+            <h2 className="section-title">Vos clients</h2>
+            <p className="section-sub">Choisissez un client pour voir ses documents, ou ajoutez-en un nouveau.</p>
+            {clientErrorMsg && (
               <div className="export-note">
-                ↳ {errorMsg.includes("non configurée") ? "Base de données pas encore connectée côté serveur." : errorMsg}
+                ↳ {clientErrorMsg.includes("non configurée") ? "Base de données pas encore connectée côté serveur." : clientErrorMsg}
               </div>
             )}
-            <div className="extract-table" style={{ marginBottom: 24 }}>
-              {docs.length === 0 && !errorMsg && (
-                <div className="extract-row"><span className="label">Aucun document reçu pour l'instant</span></div>
+            <div className="extract-table" style={{ marginBottom: 20 }}>
+              {clientsLoaded && clients.length === 0 && !clientErrorMsg && (
+                <div className="extract-row"><span className="label">Aucun client pour l'instant — ajoutez-en un ci-dessous</span></div>
               )}
-              {docs.map((d) => (
-                <div className="extract-row" key={d.id}>
-                  <span className="label">
-                    {d.downloadUrl
-                      ? <a href={d.downloadUrl} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>{d.fileName}</a>
-                      : d.fileName}
-                    {" "}<span style={{ color: "var(--text-dim)" }}>({d.docType.replace(/_/g, " ")})</span>
-                  </span>
-                  <span className="status-chip status-attente">{d.status}</span>
+              {clients.map((c) => (
+                <div className="extract-row" key={c.id} style={{ cursor: "pointer" }} onClick={() => setSelectedClientId(c.id)}>
+                  <span className="label">{c.name}</span>
+                  <span className="value tag">Ouvrir →</span>
                 </div>
               ))}
             </div>
-
-            <h2 className="section-title">Choisissez un document à tester</h2>
-            <p className="section-sub">Chaque type de pièce est lu et classé différemment</p>
-            <div className="doc-grid">
-              {Object.entries(DOCS).map(([key, d]) => (
-                <button key={key} className={`doc-btn ${tested.has(key) ? "tested" : ""}`} onClick={() => showDoc(key)}>
-                  <span className="icon">{d.icon}</span>
-                  <span className="name">{d.name}</span>
-                  <span className="hint">{d.hint}</span>
-                  {tested.has(key) && <span className="done-mark">✓ testé</span>}
-                </button>
-              ))}
-            </div>
-            {anyTested && (
-              <div style={{ marginTop: 18 }}>
-                <div className="export-note">
-                  ↳ {allDone
-                    ? "Tous les documents ont été testés"
-                    : `${tested.size} document${tested.size > 1 ? "s" : ""} testé${tested.size > 1 ? "s" : ""} — vous pouvez continuer ou en tester d'autres`}
-                </div>
-                <button className="btn-primary" onClick={() => navigate("/questionnaire")}>Terminé — passer au questionnaire</button>
-              </div>
-            )}
+            <form onSubmit={handleCreateClient}>
+              <label className="form-label">Nouveau client</label>
+              <input
+                type="text"
+                placeholder="Ex. Riad Textile SARL"
+                value={newClientName}
+                onChange={(e) => setNewClientName(e.target.value)}
+                style={{ marginBottom: 10 }}
+              />
+              <button type="submit" className="btn-primary" disabled={!newClientName.trim() || creatingClient}>
+                {creatingClient ? "Création…" : "+ Ajouter ce client"}
+              </button>
+            </form>
           </>
         )}
 
-        {current && (
+        {selectedClientId && (
           <>
-            <button className="back-link" onClick={() => setSelectedKey(null)}>← Choisir un autre document</button>
-            <h2 className="section-title">{current.name}</h2>
-            <p className="section-sub">{current.sub}</p>
-            <div className="doc-card">
-              <div className="doc-icon">{current.icon}</div>
-              <div className="doc-name">{current.file}</div>
+            <button className="back-link" onClick={changeClient}>← Changer de client</button>
+            <div className="eyebrow" style={{ marginBottom: 6 }}>Client</div>
+            <h2 className="section-title">{selectedClient?.name || selectedClientId}</h2>
+            <div className="export-note" style={{ wordBreak: "break-all" }}>
+              ↳ Lien à transmettre à ce client pour qu'il envoie ses documents : {clientLink}
             </div>
-            <h2 className="section-title" style={{ fontSize: 16 }}>Ce que le système a lu</h2>
-            <div className="extract-table" style={{ marginBottom: current.recon ? 14 : 20 }}>
-              {current.rows.map(([label, value, tag], i) => (
-                <div className="extract-row" key={i}>
-                  <span className="label">{label}</span>
-                  <span className={`value${tag ? " tag" : ""}`}>{value}</span>
+
+            <div className="steps">
+              <div className="step on">01 · Dépôt</div>
+              <div className="step on">02 · Lecture</div>
+              <div className="step on">03 · Classement</div>
+              <div className="step">04 · Export</div>
+            </div>
+
+            {showExportInfo && !current && (
+              <>
+                <h2 className="section-title">Export comptable</h2>
+                <p className="section-sub">Envoi des écritures classées vers votre logiciel de comptabilité</p>
+                <div className="extract-table" style={{ marginBottom: 20 }}>
+                  <div className="extract-row"><span className="label">Logiciel connecté</span><span className="value tag">Sage 100</span></div>
+                  <div className="extract-row"><span className="label">Dernier export</span><span className="value">Aucun pour l'instant</span></div>
+                  <div className="extract-row"><span className="label">Documents prêts à exporter</span><span className="value">{docs.length}</span></div>
                 </div>
-              ))}
-            </div>
-            {current.recon && (
-              <div style={{ marginBottom: 14 }}>
-                <h2 className="section-title" style={{ fontSize: 14 }}>Rapprochement bancaire</h2>
-                <div className="extract-table">
-                  {current.recon.map(([label, amount, statusLabel, warn], i) => (
-                    <div className="extract-row" key={i}>
-                      <span className="label">{label} <span style={{ color: "var(--text-dim)" }}>({amount})</span></span>
-                      <span
-                        className="value"
-                        style={{ background: warn ? "#C0713E" : "var(--zellige)", color: "#fff", padding: "2px 8px", borderRadius: 3, fontSize: 11 }}
-                      >
-                        {statusLabel}
+                <div className="export-note">↳ Fonctionnalité de démonstration — l'export automatique arrivera dans une prochaine version</div>
+              </>
+            )}
+
+            {!showExportInfo && !current && (
+              <>
+                <h2 className="section-title" style={{ fontSize: 16 }}>Documents reçus</h2>
+                {errorMsg && (
+                  <div className="export-note">
+                    ↳ {errorMsg.includes("non configurée") ? "Base de données pas encore connectée côté serveur." : errorMsg}
+                  </div>
+                )}
+                <div className="extract-table" style={{ marginBottom: 24 }}>
+                  {docs.length === 0 && !errorMsg && (
+                    <div className="extract-row"><span className="label">Aucun document reçu pour l'instant</span></div>
+                  )}
+                  {docs.map((d) => (
+                    <div className="extract-row" key={d.id}>
+                      <span className="label">
+                        {d.downloadUrl
+                          ? <a href={d.downloadUrl} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>{d.fileName}</a>
+                          : d.fileName}
+                        {" "}<span style={{ color: "var(--text-dim)" }}>({d.docType.replace(/_/g, " ")})</span>
                       </span>
+                      <span className="status-chip status-attente">{d.status}</span>
                     </div>
                   ))}
                 </div>
-              </div>
+
+                <h2 className="section-title">Choisissez un document à tester</h2>
+                <p className="section-sub">Chaque type de pièce est lu et classé différemment</p>
+                <div className="doc-grid">
+                  {Object.entries(DOCS).map(([key, d]) => (
+                    <button key={key} className={`doc-btn ${tested.has(key) ? "tested" : ""}`} onClick={() => showDoc(key)}>
+                      <span className="icon">{d.icon}</span>
+                      <span className="name">{d.name}</span>
+                      <span className="hint">{d.hint}</span>
+                      {tested.has(key) && <span className="done-mark">✓ testé</span>}
+                    </button>
+                  ))}
+                </div>
+                {anyTested && (
+                  <div style={{ marginTop: 18 }}>
+                    <div className="export-note">
+                      ↳ {allDone
+                        ? "Tous les documents ont été testés"
+                        : `${tested.size} document${tested.size > 1 ? "s" : ""} testé${tested.size > 1 ? "s" : ""} — vous pouvez continuer ou en tester d'autres`}
+                    </div>
+                    <button className="btn-primary" onClick={() => navigate("/questionnaire")}>Terminé — passer au questionnaire</button>
+                  </div>
+                )}
+              </>
             )}
-            <div className={`export-note${current.warn ? " quality-warn" : ""}`}>{current.note}</div>
-            <button className="btn-primary" onClick={() => setSelectedKey(null)}>← Retour aux documents</button>
+
+            {current && (
+              <>
+                <button className="back-link" onClick={() => setSelectedKey(null)}>← Choisir un autre document</button>
+                <h2 className="section-title">{current.name}</h2>
+                <p className="section-sub">{current.sub}</p>
+                <div className="doc-card">
+                  <div className="doc-icon">{current.icon}</div>
+                  <div className="doc-name">{current.file}</div>
+                </div>
+                <h2 className="section-title" style={{ fontSize: 16 }}>Ce que le système a lu</h2>
+                <div className="extract-table" style={{ marginBottom: current.recon ? 14 : 20 }}>
+                  {current.rows.map(([label, value, tag], i) => (
+                    <div className="extract-row" key={i}>
+                      <span className="label">{label}</span>
+                      <span className={`value${tag ? " tag" : ""}`}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+                {current.recon && (
+                  <div style={{ marginBottom: 14 }}>
+                    <h2 className="section-title" style={{ fontSize: 14 }}>Rapprochement bancaire</h2>
+                    <div className="extract-table">
+                      {current.recon.map(([label, amount, statusLabel, warn], i) => (
+                        <div className="extract-row" key={i}>
+                          <span className="label">{label} <span style={{ color: "var(--text-dim)" }}>({amount})</span></span>
+                          <span
+                            className="value"
+                            style={{ background: warn ? "#C0713E" : "var(--zellige)", color: "#fff", padding: "2px 8px", borderRadius: 3, fontSize: 11 }}
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className={`export-note${current.warn ? " quality-warn" : ""}`}>{current.note}</div>
+                <button className="btn-primary" onClick={() => setSelectedKey(null)}>← Retour aux documents</button>
+              </>
+            )}
           </>
         )}
       </div>
