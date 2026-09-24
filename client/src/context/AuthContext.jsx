@@ -8,16 +8,22 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => onAuthStateChanged(auth, (u) => {
-    setUser(u);
-    setLoading(false);
-  }), []);
+  useEffect(() => {
+    if (!auth) { setLoading(false); return; }
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+  }, []);
 
   const value = {
     user,
     loading,
-    login: (email, password) => signInWithEmailAndPassword(auth, email, password),
-    logout: () => signOut(auth),
+    login: (email, password) => {
+      if (!auth) return Promise.reject(new Error("Authentification Firebase non configurée"));
+      return signInWithEmailAndPassword(auth, email, password);
+    },
+    logout: () => (auth ? signOut(auth) : Promise.resolve()),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -9,5 +9,16 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// Défensif : tant que les VITE_FIREBASE_* ne sont pas renseignées (avant la configuration
+// Firebase Console), `auth` reste `null` plutôt que de faire planter tout le site — seules les
+// pages /login et /cabinet en dépendent, l'espace client (dépôt de documents) doit continuer à
+// fonctionner sans interruption pendant que la connexion cabinet se met en place.
+let auth = null;
+try {
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+} catch (err) {
+  console.warn("Firebase Auth non configuré (VITE_FIREBASE_* manquantes) — l'espace cabinet est inaccessible tant que ce n'est pas fait.", err);
+}
+
+export { auth };

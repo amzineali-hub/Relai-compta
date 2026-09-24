@@ -5,7 +5,7 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 // Jeton Firebase du cabinet connecté, pour les routes qui le demandent (voir requireAuth côté
 // serveur) — absent/omis pour un visiteur non connecté, la requête échoue alors avec 401.
 async function authHeader() {
-  if (!auth.currentUser) return {};
+  if (!auth || !auth.currentUser) return {};
   return { Authorization: `Bearer ${await auth.currentUser.getIdToken()}` };
 }
 
