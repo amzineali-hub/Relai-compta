@@ -20,6 +20,7 @@ export const api = {
   createCabinet: (data) => request("/cabinets", { method: "POST", body: JSON.stringify(data) }),
   getClients: (cabinetId) => request(`/cabinets/${cabinetId}/clients`),
   createClient: (cabinetId, data) => request(`/cabinets/${cabinetId}/clients`, { method: "POST", body: JSON.stringify(data) }),
+  sendMessage: (cabinetId, text) => request(`/cabinets/${cabinetId}/messages`, { method: "POST", body: JSON.stringify({ text }) }),
   getDocuments: (cabinetId, clientId) => request(`/documents/${cabinetId}/${clientId}`),
   addDocument: (cabinetId, clientId, formData) =>
     request(`/documents/${cabinetId}/${clientId}`, { method: "POST", body: formData }),

@@ -65,4 +65,18 @@ router.post("/:cabinetId/clients", asyncHandler(async (req, res) => {
   res.status(201).json({ id: ref.id, name });
 }));
 
+// Enregistre une question envoyée par un client depuis son espace de suivi (ex. depuis la page
+// État comptable) — pas de fil de discussion pour l'instant, juste un dépôt côté cabinet.
+router.post("/:cabinetId/messages", asyncHandler(async (req, res) => {
+  if (!db) return res.status(503).json({ error: "Base de données non configurée" });
+  const { text } = req.body;
+  if (!text || !text.trim()) return res.status(400).json({ error: "Le message est vide" });
+
+  const ref = await db
+    .collection("cabinets").doc(req.params.cabinetId)
+    .collection("messages").add({ text: text.trim(), createdAt: new Date().toISOString() });
+
+  res.status(201).json({ id: ref.id });
+}));
+
 export default router;
