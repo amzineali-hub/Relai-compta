@@ -44,7 +44,10 @@ body{
 @media (min-width:640px){
   body{ padding:40px 24px; }
   .app-shell{
-    max-width:640px;
+    /* Fluide (proportion de la fenêtre) plutôt qu'un palier fixe, pour bien remplir un grand
+       écran au lieu de rester minuscule au milieu d'un espace vide, tout en gardant une largeur
+       de lecture raisonnable pour les pages de texte (formulaires, État comptable...). */
+    max-width: min(92vw, 700px);
     min-height:auto;
     margin:0 auto;
     border-radius:16px;
@@ -54,13 +57,13 @@ body{
   .page{ padding:40px 40px 44px; }
 }
 @media (min-width:1024px){
-  .app-shell{ max-width:760px; }
+  .app-shell{ max-width: min(85vw, 900px); }
 }
-/* La vue cabinet (barre latérale + grille KPI/documents) a besoin de plus de largeur que les
-   autres pages — élargie seulement quand elle est affichée, via :has() plutôt qu'en agrandissant
+/* La vue cabinet (barre latérale + grille KPI/documents) profite de bien plus de largeur que les
+   pages de texte — élargie seulement quand elle est affichée, via :has() plutôt qu'en agrandissant
    le conteneur pour toutes les pages. */
 @media (min-width:900px){
-  .app-shell:has(.page-dashboard){ max-width: 1040px; }
+  .app-shell:has(.page-dashboard){ max-width: min(95vw, 1400px); }
 }
 .mark{font-family:'Fraunces', serif; font-size:18px; font-weight:700; color:var(--ink);}
 .mark span{color:var(--zellige);}
@@ -218,6 +221,14 @@ input[type=file]{width:100%; padding:10px 12px; border:1px solid var(--line); bo
   .kpi-card.green{background:linear-gradient(160deg,#16B389 0%,var(--zellige-vivid) 100%); box-shadow:0 4px 0 var(--zellige-vivid-dark), 0 10px 16px -8px rgba(15,155,118,0.5);}
   .kpi-card.blue{background:linear-gradient(160deg,#4C97F2 0%,var(--blue-vivid) 100%); box-shadow:0 4px 0 var(--blue-vivid-dark), 0 10px 16px -8px rgba(47,127,224,0.5);}
   .kpi-card.orange{background:linear-gradient(160deg,#FFB84D 0%,var(--ocre-vivid) 100%); box-shadow:0 4px 0 var(--ocre-vivid-dark), 0 10px 16px -8px rgba(239,162,46,0.5);}
+}
+/* Très grand écran (le tableau de bord peut désormais atteindre 1400px) : profite de la place
+   en plus pour la grille de documents et la barre latérale, plutôt que de garder des colonnes
+   proportionnellement énormes. */
+@media (min-width:1300px){
+  .doc-grid{grid-template-columns:repeat(4, 1fr);}
+  .dash-sidebar{width:240px;}
+  .dash-main{padding:36px 44px;}
 }
 
 /* Impression réelle ("Télécharger le PDF" déclenche window.print()) : masque tout ce qui n'a pas
