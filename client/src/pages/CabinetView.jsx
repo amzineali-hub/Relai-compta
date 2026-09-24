@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { api } from "../api";
+import { describeAccountClasses } from "../lib/cgnc";
 
 // Contenu illustratif (données fictives) — reprend la maquette relaicompta-demo.html à
 // l'identique. Sert à montrer à un cabinet prospect à quoi ressemblerait la lecture automatique ;
@@ -313,12 +314,22 @@ export default function CabinetView() {
                 </div>
                 <h2 className="section-title" style={{ fontSize: 16 }}>Ce que le système a lu</h2>
                 <div className="extract-table" style={{ marginBottom: current.recon ? 14 : 20 }}>
-                  {current.rows.map(([label, value, tag], i) => (
-                    <div className="extract-row" key={i}>
-                      <span className="label">{label}</span>
-                      <span className={`value${tag ? " tag" : ""}`}>{value}</span>
-                    </div>
-                  ))}
+                  {current.rows.map(([label, value, tag], i) => {
+                    const accountClasses = tag ? describeAccountClasses(value) : "";
+                    return (
+                      <div className="extract-row" key={i}>
+                        <span className="label">
+                          {label}
+                          {accountClasses && (
+                            <span style={{ display: "block", fontSize: 10, color: "var(--text-dim)", marginTop: 2 }}>
+                              Plan comptable CGNC · {accountClasses}
+                            </span>
+                          )}
+                        </span>
+                        <span className={`value${tag ? " tag" : ""}`}>{value}</span>
+                      </div>
+                    );
+                  })}
                 </div>
                 {current.recon && (
                   <div style={{ marginBottom: 14 }}>

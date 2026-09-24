@@ -12,7 +12,10 @@ function slugify(name) {
     .replace(/(^-|-$)/g, "");
 }
 
-// Crée un cabinet et son lien d'accès unique (V0 : pas de mot de passe, accès par lien)
+// Crée un cabinet. Multi-cabinet en base (chaque cabinet a un id Firestore + un slug unique),
+// mais le reste de l'app route encore tout sur le cabinet fixe "demo-cabinet" — cette route existe
+// pour la base de données, pas encore pour un vrai flux d'auto-inscription (pas de route React
+// pour /c/{slug} ni de page de connexion cabinet ; à construire avant d'exposer ceci publiquement).
 router.post("/", asyncHandler(async (req, res) => {
   if (!db) return res.status(503).json({ error: "Base de données non configurée" });
   const { name, city, softwareUsed = [], sizeRange } = req.body;
@@ -24,12 +27,7 @@ router.post("/", asyncHandler(async (req, res) => {
     createdAt: new Date().toISOString(),
   });
 
-  res.status(201).json({
-    id: doc.id,
-    slug,
-    cabinetLink: `/c/${slug}`,
-    clientLink: `/c/${slug}/client`,
-  });
+  res.status(201).json({ id: doc.id, slug });
 }));
 
 // Récupère un cabinet par son slug (lien d'accès)

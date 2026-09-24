@@ -7,7 +7,21 @@ const router = Router();
 
 // Mémoire uniquement — pas de disque persistant en serverless. 4 Mo de marge sous la limite de
 // taille de requête généralement appliquée aux fonctions Vercel (~4.5 Mo sur le plan Hobby).
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024 } });
+// Le type de fichier était jusqu'ici seulement vérifié côté navigateur (ClientView.jsx) — un appel
+// direct à l'API pouvait envoyer n'importe quoi. Revérifié ici, côté serveur, seule barrière fiable.
+const ACCEPTED_MIME_TYPES = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/heic", "image/heif"];
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!ACCEPTED_MIME_TYPES.includes(file.mimetype)) {
+      const err = new Error("Format non accepté — seuls les PDF, JPG, PNG et HEIC sont acceptés.");
+      err.status = 400;
+      return cb(err);
+    }
+    cb(null, true);
+  },
+});
 
 // Liste les documents envoyés par un client d'un cabinet, avec une URL de téléchargement signée
 // et temporaire par document (le bucket reste privé — pas de fichier client exposé publiquement).
