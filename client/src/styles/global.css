@@ -95,7 +95,7 @@ button{font-family:'IBM Plex Sans'; cursor:pointer; border:none; transition:tran
 .status-recu{background:var(--zellige-vivid); box-shadow:0 2px 0 var(--zellige-vivid-dark);}
 .status-attente{background:var(--ocre-vivid); box-shadow:0 2px 0 var(--ocre-vivid-dark);}
 .export-note{background:#FBF5EA; border:1px solid var(--ocre); border-left:4px solid var(--ocre-vivid); border-radius:4px; padding:10px 12px; font-size:12px; color:#7A5A22; margin:14px 0; box-shadow:0 2px 8px -4px rgba(192,138,62,0.35);}
-input[type=text]{width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:3px; font-family:'IBM Plex Sans'; font-size:14px; background:var(--bg);}
+input[type=text], input[type=password]{width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:3px; font-family:'IBM Plex Sans'; font-size:14px; background:var(--bg);}
 input[type=file]{width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:3px; font-family:'IBM Plex Sans'; font-size:13px; background:var(--bg); color:var(--text-dim);}
 .form-label{font-size:13px; font-weight:700; color:var(--ink); margin-bottom:8px; display:block;}
 .chip{

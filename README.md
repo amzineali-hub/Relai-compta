@@ -35,6 +35,12 @@ Le frontend tourne sur `http://localhost:5173`, l'API sur `http://localhost:4000
    `FIREBASE_STORAGE_BUCKET` ci-dessous.
 4. Paramètres du projet → **Comptes de service** → "Générer une nouvelle clé privée" → télécharge le JSON
 5. Place ce fichier dans `server/serviceAccountKey.json` (déjà exclu du dépôt via `.gitignore`)
+6. Active **Authentication** → onglet "Sign-in method" → active le fournisseur **Email/mot de passe**
+7. Onglet "Users" → "Add user" → crée le compte du cabinet (email + mot de passe) — c'est la vue
+   `/cabinet` qui en a besoin, pas l'espace client (accès par lien, sans compte)
+8. Paramètres du projet → Général → "Vos applications" → ajoute une app **Web** (icône `</>`) si
+   aucune n'existe → copie `apiKey`, `authDomain`, `projectId` dans `client/.env`
+   (`VITE_FIREBASE_*`, voir `.env.example`)
 
 ## Déployer l'API (Vercel)
 Le dossier `server/` est un projet Vercel à part entière (Root Directory = `server` dans les
@@ -53,19 +59,24 @@ Le dossier `client/` est lui aussi un projet Vercel à part (Root Directory = `c
 cd client
 npm run build
 ```
-Avant de déployer, définis `VITE_API_URL` (variable d'environnement du projet Vercel du
-frontend) sur l'URL de l'API déployée ci-dessus, suivie de `/api` — ex.
-`https://relai-compta-api-xxxx.vercel.app/api`.
+Avant de déployer, définis sur ce projet Vercel (type "Config", pas "Secret" — ces valeurs
+finissent dans le bundle JS public) :
+- `VITE_API_URL` : l'URL de l'API déployée ci-dessus, suivie de `/api` — ex.
+  `https://relai-compta-api-xxxx.vercel.app/api`
+- `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID` — voir
+  l'étape 8 de la configuration Firebase ci-dessus
 
 ## État actuel
 - Backend testé et fonctionnel (démarre, répond sur `/api/health`), déployé sur Vercel
 - Frontend testé et fonctionnel, déployé sur Vercel
 - Vue client : dépôt de fichier réel (Firebase Storage, 4 Mo max) + liste des documents envoyés
   avec lien de téléchargement (URL signée, 1h), branchés sur l'API
-- Vue cabinet : liste des documents reçus avec lien de téléchargement (version simplifiée, pas
-  encore le détail par type de document de la maquette)
+- Vue cabinet : liste réelle de clients par cabinet (créer/lister), documents reçus par client
+  avec lien de téléchargement, **réservée à un cabinet connecté** (Firebase Auth email/mot de
+  passe, jeton vérifié côté serveur sur les routes clients)
+- Espace client (dépôt de documents, suivi, questionnaire) : toujours par lien simple, sans
+  compte — modèle voulu pour des clients externes ponctuels, pas une lacune à corriger
 - Questionnaire : écrit réellement en base Firestore
-- Accès toujours par lien simple (pas de mot de passe) — Firebase Auth à ajouter en V1
 
 
 ## Client React — mise en route

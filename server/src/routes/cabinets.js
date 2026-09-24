@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "../firebase.js";
 import { asyncHandler } from "../lib/asyncHandler.js";
+import { requireAuth } from "../lib/requireAuth.js";
 
 const router = Router();
 
@@ -39,9 +40,10 @@ router.get("/:slug", asyncHandler(async (req, res) => {
   res.json({ id: doc.id, ...doc.data() });
 }));
 
-// Liste les clients d'un cabinet (documents groupés par client côté cabinet — sans ça, tous les
-// clients se retrouvaient mélangés dans une seule case "demo-client" fixe).
-router.get("/:cabinetId/clients", asyncHandler(async (req, res) => {
+// Liste les clients d'un cabinet — réservé au cabinet connecté : avant l'authentification,
+// n'importe qui connaissant le cabinetId (public, utilisé dans toutes les URLs) pouvait voir
+// la liste complète de ses clients.
+router.get("/:cabinetId/clients", requireAuth, asyncHandler(async (req, res) => {
   if (!db) return res.status(503).json({ error: "Base de données non configurée" });
   const snap = await db
     .collection("cabinets").doc(req.params.cabinetId)
@@ -50,8 +52,8 @@ router.get("/:cabinetId/clients", asyncHandler(async (req, res) => {
 }));
 
 // Enregistre un nouveau client pour ce cabinet — son lien d'envoi de documents est
-// /c/{cabinetId}/{clientId}, à transmettre directement au client.
-router.post("/:cabinetId/clients", asyncHandler(async (req, res) => {
+// /c/{cabinetId}/{clientId}, à transmettre directement au client. Réservé au cabinet connecté.
+router.post("/:cabinetId/clients", requireAuth, asyncHandler(async (req, res) => {
   if (!db) return res.status(503).json({ error: "Base de données non configurée" });
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: "Le nom du client est requis" });

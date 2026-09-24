@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { api } from "../api";
 import { describeAccountClasses } from "../lib/cgnc";
+import { useAuth } from "../context/AuthContext";
 
 // Contenu illustratif (données fictives) — reprend la maquette relaicompta-demo.html à
 // l'identique. Sert à montrer à un cabinet prospect à quoi ressemblerait la lecture automatique ;
@@ -95,6 +96,7 @@ const DOCS = {
 export default function CabinetView() {
   const { cabinetId = "demo-cabinet", clientId: urlClientId } = useParams();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [clients, setClients] = useState([]);
   const [clientsLoaded, setClientsLoaded] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState(urlClientId || null);
@@ -177,7 +179,13 @@ export default function CabinetView() {
         <button className="nav-item" onClick={() => selectedClientId && showDoc("releve_bancaire")}>🏦 Rapprochement</button>
         <button className={`nav-item ${showExportInfo ? "on" : ""}`} onClick={() => { setSelectedKey(null); setShowExportInfo(true); }}>📤 Export</button>
         <Link className="nav-item" to="/questionnaire">📋 Questionnaire</Link>
-        <Link className="nav-item" to="/client" style={{ marginTop: "auto" }}>← Espace client</Link>
+        <div style={{ marginTop: "auto" }}>
+          {user && (
+            <div style={{ padding: "0 12px 8px", fontSize: 11, color: "#8A9490", wordBreak: "break-all" }}>{user.email}</div>
+          )}
+          <button className="nav-item" onClick={async () => { await logout(); navigate("/login"); }}>⎋ Se déconnecter</button>
+          <Link className="nav-item" to="/client">← Espace client</Link>
+        </div>
       </div>
 
       <div className="dash-main">
