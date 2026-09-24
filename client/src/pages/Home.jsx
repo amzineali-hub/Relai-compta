@@ -11,7 +11,14 @@ export default function Home() {
           Une démonstration : d'abord le point de vue de votre client, puis ce qui se passe côté cabinet une fois le document envoyé.
         </p>
       </div>
-      <button className="btn-primary" onClick={() => navigate("/client")}>Découvrir la démo</button>
+      <div>
+        <div className="ledger-strip">
+          <div className="cell">Lecture<b>Auto</b></div>
+          <div className="cell">Classement<b>CGNC</b></div>
+          <div className="cell">Export<b>Sage / Odoo</b></div>
+        </div>
+        <button className="btn-primary" onClick={() => navigate("/client")}>Découvrir la démo</button>
+      </div>
     </div>
   );
 }
