@@ -1,12 +1,14 @@
 :root{
-  --ink:#0E1A26;
+  /* Texte en bleu royal (titres, corps, libellés secondaires) — la palette "vive" (boutons,
+     cartes) reste séparée ci-dessous et n'est pas concernée par ce changement. */
+  --ink:#2541B2;
   --bg:#F1F3EF;
   --paper:#FFFFFF;
   --zellige:#14594C;
   --zellige-dim:#E6EEEC;
   --ocre:#C08A3E;
-  --text:#0D0D0B;
-  --text-dim:#4A5750;
+  --text:#1B2A6B;
+  --text-dim:#5B6690;
   --line:#D8DED9;
   /* Palette "vive" réservée aux éléments interactifs (boutons, cartes, cadres) — le texte courant
      garde les tons sourds ci-dessus pour rester lisible et élégant. */
@@ -58,6 +60,9 @@ body{
 }
 @media (min-width:1024px){
   .app-shell{ max-width: min(85vw, 900px); }
+}
+@media (min-width:1440px){
+  .app-shell{ max-width: min(78vw, 1180px); }
 }
 /* La vue cabinet (barre latérale + grille KPI/documents) profite de bien plus de largeur que les
    pages de texte — élargie seulement quand elle est affichée, via :has() plutôt qu'en agrandissant
